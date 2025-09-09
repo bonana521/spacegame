@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D星际探索游戏</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        
+        #gameCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            min-width: 200px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+        
+        #minimap {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #333;
+            border-radius: 10px;
+            z-index: 100;
+        }
+        
+        .control-item {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .status-item {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #333;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            z-index: 150;
+            pointer-events: none;
+        }
+        
+        #crosshair::before,
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            background: #00ff00;
+        }
+        
+        #crosshair::before {
+            top: 50%;
+            left: -5px;
+            right: -5px;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+        
+        #crosshair::after {
+            left: 50%;
+            top: -5px;
+            bottom: -5px;
+            width: 2px;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-spinner"></div>
+        <p>正在加载星际探索游戏...</p>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <h3>🚀 星际探索</h3>
+        <div class="status-item">位置: <span id="position">0, 0, 0</span></div>
+        <div class="status-item">速度: <span id="speed">0</span> km/s</div>
+        <div class="status-item">燃料: <span id="fuel">100</span>%</div>
+        <div class="status-item">已探索: <span id="explored">0</span> 个星系</div>
+        <div class="status-item">目标距离: <span id="distance">--</span> AU</div>
+    </div>
+    
+    <div id="controls">
+        <div class="control-item"><strong>🎮 控制说明:</strong></div>
+        <div class="control-item">W/S - 前进/后退</div>
+        <div class="control-item">A/D - 左右移动</div>
+        <div class="control-item">Q/E - 上升/下降</div>
+        <div class="control-item">鼠标 - 视角控制</div>
+        <div class="control-item">空格 - 加速</div>
+        <div class="control-item">Shift - 减速</div>
+        <button onclick="toggleWarp()">曲速引擎</button>
+        <button onclick="findNearestPlanet()">寻找最近行星</button>
+    </div>
+    
+    <div id="minimap">
+        <canvas id="minimapCanvas" width="200" height="200"></canvas>
+    </div>
+    
+    <div id="crosshair"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // 游戏状态
+        const gameState = {
+            camera: null,
+            scene: null,
+            renderer: null,
+            spaceship: null,
+            planets: [],
+            stars: null,
+            fuel: 100,
+            speed: 0,
+            maxSpeed: 10,
+            exploredSystems: 0,
+            isWarpActive: false,
+            targetPlanet: null,
+            keys: {},
+            mouse: { x: 0, y: 0 },
+            clock: new THREE.Clock()
+        };
+        
+        // 初始化游戏
+        function init() {
+            // 创建场景
+            gameState.scene = new THREE.Scene();
+            
+            // 创建相机
+            gameState.camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                10000
+            );
+            gameState.camera.position.set(0, 10, 20);
+            
+            // 创建渲染器
+            gameState.renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('gameCanvas'),
+                antialias: true 
+            });
+            gameState.renderer.setSize(window.innerWidth, window.innerHeight);
+            gameState.renderer.setClearColor(0x000011);
+            gameState.renderer.shadowMap.enabled = true;
+            gameState.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // 创建星空背景
+            createStarField();
+            
+            // 创建飞船
+            createSpaceship();
+            
+            // 创建行星系统
+            createPlanetSystem();
+            
+            // 创建光照
+            createLighting();
+            
+            // 设置事件监听
+            setupEventListeners();
+            
+            // 开始游戏循环
+            animate();
+            
+            // 隐藏加载界面
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // 创建星空背景
+        function createStarField() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xFFFFFF,
+                size: 0.5,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const starVertices = [];
+            for (let i = 0; i < 50000; i++) {
+                const x = (Math.random() - 0.5) * 5000;
+                const y = (Math.random() - 0.5) * 5000;
+                const z = (Math.random() - 0.5) * 5000;
+                starVertices.push(x, y, z);
+            }
+            
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+            gameState.stars = new THREE.Points(starGeometry, starMaterial);
+            gameState.scene.add(gameState.stars);
+        }
+        
+        // 创建飞船
+        function createSpaceship() {
+            const shipGroup = new THREE.Group();
+            
+            // 飞船主体
+            const bodyGeometry = new THREE.ConeGeometry(1, 4, 8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x4488FF,
+                shininess: 100 
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.rotation.x = Math.PI / 2;
+            shipGroup.add(body);
+            
+            // 飞船引擎
+            const engineGeometry = new THREE.CylinderGeometry(0.3, 0.5, 1, 8);
+            const engineMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xFF4444,
+                emissive: 0x440000 
+            });
+            const engine = new THREE.Mesh(engineGeometry, engineMaterial);
+            engine.position.z = -2;
+            engine.rotation.x = Math.PI / 2;
+            shipGroup.add(engine);
+            
+            // 飞船翼
+            const wingGeometry = new THREE.BoxGeometry(3, 0.1, 1);
+            const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+            const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+            wing.position.z = -1;
+            shipGroup.add(wing);
+            
+            gameState.spaceship = shipGroup;
+            gameState.scene.add(gameState.spaceship);
+        }
+        
+        // 创建行星系统
+        function createPlanetSystem() {
+            const planetData = [
+                { name: '地球', color: 0x4488FF, size: 3, distance: 50, speed: 0.01 },
+                { name: '火星', color: 0xFF4444, size: 2, distance: 80, speed: 0.008 },
+                { name: '木星', color: 0xFFAA44, size: 8, distance: 150, speed: 0.005 },
+                { name: '土星', color: 0xFFDD44, size: 6, distance: 200, speed: 0.003 },
+                { name: '海王星', color: 0x4444FF, size: 5, distance: 280, speed: 0.002 }
+            ];
+            
+            planetData.forEach((data, index) => {
+                const planetGroup = new THREE.Group();
+                
+                // 创建行星
+                const planetGeometry = new THREE.SphereGeometry(data.size, 32, 32);
+                const planetMaterial = new THREE.MeshPhongMaterial({ 
+                    color: data.color,
+                    shininess: 30
+                });
+                const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                planet.castShadow = true;
+                planet.receiveShadow = true;
+                planetGroup.add(planet);
+                
+                // 创建轨道
+                const orbitGeometry = new THREE.RingGeometry(data.distance - 0.5, data.distance + 0.5, 64);
+                const orbitMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x444444, 
+                    transparent: true, 
+                    opacity: 0.3,
+                    side: THREE.DoubleSide
+                });
+                const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+                orbit.rotation.x = Math.PI / 2;
+                gameState.scene.add(orbit);
+                
+                // 设置初始位置
+                planetGroup.position.x = data.distance;
+                
+                // 添加到场景
+                gameState.scene.add(planetGroup);
+                
+                // 保存行星数据
+                gameState.planets.push({
+                    group: planetGroup,
+                    data: data,
+                    angle: Math.random() * Math.PI * 2,
+                    explored: false
+                });
+            });
+        }
+        
+        // 创建光照
+        function createLighting() {
+            // 太阳光
+            const sunLight = new THREE.PointLight(0xFFFFFF, 2, 500);
+            sunLight.position.set(0, 0, 0);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            gameState.scene.add(sunLight);
+            
+            // 环境光
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+            gameState.scene.add(ambientLight);
+            
+            // 太阳
+            const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFF00,
+                emissive: 0xFFFF00
+            });
+            const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            gameState.scene.add(sun);
+        }
+        
+        // 设置事件监听
+        function setupEventListeners() {
+            // 键盘事件
+            document.addEventListener('keydown', (e) => {
+                gameState.keys[e.key.toLowerCase()] = true;
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                gameState.keys[e.key.toLowerCase()] = false;
+            });
+            
+            // 鼠标事件
+            document.addEventListener('mousemove', (e) => {
+                gameState.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                gameState.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+            
+            // 窗口大小改变
+            window.addEventListener('resize', () => {
+                gameState.camera.aspect = window.innerWidth / window.innerHeight;
+                gameState.camera.updateProjectionMatrix();
+                gameState.renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        
+        // 更新飞船控制
+        function updateSpaceship() {
+            const deltaTime = gameState.clock.getDelta();
+            
+            // 键盘控制
+            if (gameState.keys['w']) {
+                gameState.spaceship.position.z -= 0.5;
+                gameState.speed = Math.min(gameState.speed + 0.1, gameState.maxSpeed);
+            }
+            if (gameState.keys['s']) {
+                gameState.spaceship.position.z += 0.5;
+                gameState.speed = Math.max(gameState.speed - 0.1, 0);
+            }
+            if (gameState.keys['a']) {
+                gameState.spaceship.position.x -= 0.5;
+            }
+            if (gameState.keys['d']) {
+                gameState.spaceship.position.x += 0.5;
+            }
+            if (gameState.keys['q']) {
+                gameState.spaceship.position.y += 0.5;
+            }
+            if (gameState.keys['e']) {
+                gameState.spaceship.position.y -= 0.5;
+            }
+            
+            // 空格加速
+            if (gameState.keys[' ']) {
+                gameState.speed = Math.min(gameState.speed + 0.2, gameState.maxSpeed * 2);
+                gameState.fuel = Math.max(gameState.fuel - 0.1, 0);
+            }
+            
+            // Shift减速
+            if (gameState.keys['shift']) {
+                gameState.speed = Math.max(gameState.speed - 0.2, 0);
+            }
+            
+            // 鼠标控制视角
+            gameState.camera.position.x = gameState.spaceship.position.x + gameState.mouse.x * 10;
+            gameState.camera.position.y = gameState.spaceship.position.y + gameState.mouse.y * 10;
+            gameState.camera.position.z = gameState.spaceship.position.z + 20;
+            gameState.camera.lookAt(gameState.spaceship.position);
+            
+            // 自动减速
+            if (!gameState.keys['w'] && !gameState.keys['s'] && !gameState.keys[' ']) {
+                gameState.speed *= 0.99;
+            }
+            
+            // 更新行星
+            gameState.planets.forEach(planet => {
+                planet.angle += planet.data.speed;
+                planet.group.position.x = Math.cos(planet.angle) * planet.data.distance;
+                planet.group.position.z = Math.sin(planet.angle) * planet.data.distance;
+                
+                // 检查是否接近行星
+                const distance = gameState.spaceship.position.distanceTo(planet.group.position);
+                if (distance < planet.data.size + 10 && !planet.explored) {
+                    planet.explored = true;
+                    gameState.exploredSystems++;
+                }
+            });
+            
+            // 更新UI
+            updateUI();
+        }
+        
+        // 更新UI
+        function updateUI() {
+            document.getElementById('position').textContent = 
+                `${gameState.spaceship.position.x.toFixed(1)}, ${gameState.spaceship.position.y.toFixed(1)}, ${gameState.spaceship.position.z.toFixed(1)}`;
+            document.getElementById('speed').textContent = gameState.speed.toFixed(1);
+            document.getElementById('fuel').textContent = gameState.fuel.toFixed(1);
+            document.getElementById('explored').textContent = gameState.exploredSystems;
+            
+            // 计算到最近行星的距离
+            let minDistance = Infinity;
+            gameState.planets.forEach(planet => {
+                const distance = gameState.spaceship.position.distanceTo(planet.group.position);
+                minDistance = Math.min(minDistance, distance);
+            });
+            
+            if (minDistance < Infinity) {
+                document.getElementById('distance').textContent = (minDistance / 10).toFixed(1);
+            }
+        }
+        
+        // 游戏循环
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 更新游戏逻辑
+            updateSpaceship();
+            
+            // 旋转星空
+            if (gameState.stars) {
+                gameState.stars.rotation.y += 0.0001;
+            }
+            
+            // 渲染场景
+            gameState.renderer.render(gameState.scene, gameState.camera);
+        }
+        
+        // 切换曲速引擎
+        function toggleWarp() {
+            gameState.isWarpActive = !gameState.isWarpActive;
+            if (gameState.isWarpActive) {
+                gameState.maxSpeed = 50;
+                alert('曲速引擎已激活！');
+            } else {
+                gameState.maxSpeed = 10;
+                alert('曲速引擎已关闭！');
+            }
+        }
+        
+        // 寻找最近行星
+        function findNearestPlanet() {
+            let nearestPlanet = null;
+            let minDistance = Infinity;
+            
+            gameState.planets.forEach(planet => {
+                const distance = gameState.spaceship.position.distanceTo(planet.group.position);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestPlanet = planet;
+                }
+            });
+            
+            if (nearestPlanet) {
+                gameState.targetPlanet = nearestPlanet;
+                alert(`最近行星: ${nearestPlanet.data.name}，距离: ${(minDistance / 10).toFixed(1)} AU`);
+            }
+        }
+        
+        // 启动游戏
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
