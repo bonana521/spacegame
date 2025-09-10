@@ -10,72 +10,297 @@
             padding: 0;
             overflow: hidden;
             background: #000;
-            font-family: Arial, sans-serif;
-            color: white;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
         }
         
         #gameCanvas {
             display: block;
-            cursor: crosshair;
+            cursor: none;
         }
         
-        #ui {
+        /* 驾驶舱UI容器 */
+        .cockpit-ui {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #333;
-            min-width: 200px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 150;
         }
         
-        #controls {
+        /* 状态指示器 */
+        .status-lights {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #333;
+            top: 30px;
+            left: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         
-        #minimap {
+        .status-light {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #666;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        .status-light.active {
+            background: #00ff00;
+            box-shadow: 0 0 15px #00ff00;
+        }
+        
+        .status-light.warning {
+            background: #ffff00;
+            box-shadow: 0 0 15px #ffff00;
+        }
+        
+        .status-light.danger {
+            background: #ff0000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+        
+        /* 速度表 */
+        .speed-indicator {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            bottom: 120px;
+            left: 80px;
             width: 200px;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #333;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(0,255,0,0.1) 0%, rgba(0,255,0,0.3) 100%);
+            border: 2px solid #00ff00;
             border-radius: 10px;
-            z-index: 100;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 0 20px rgba(0,255,0,0.3);
         }
         
-        .control-item {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-        
-        .status-item {
-            margin: 5px 0;
+        .speed-label {
             font-size: 12px;
+            color: #00ff00;
+            text-transform: uppercase;
+            margin-bottom: 5px;
         }
         
+        .speed-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .speed-unit {
+            font-size: 14px;
+            color: #00ff00;
+            margin-left: 5px;
+        }
+        
+        /* 雷达 */
+        .radar-screen {
+            position: absolute;
+            top: 80px;
+            right: 80px;
+            width: 180px;
+            height: 180px;
+            border: 3px solid #00ff00;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,0,0.05) 0%, rgba(0,255,0,0.2) 100%);
+            box-shadow: 0 0 20px rgba(0,255,0,0.5);
+        }
+        
+        .radar-sweep {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 90px;
+            background: linear-gradient(to bottom, #00ff00, transparent);
+            transform-origin: bottom center;
+            animation: radar-sweep 4s linear infinite;
+        }
+        
+        @keyframes radar-sweep {
+            0% { transform: translate(-50%, -100%) rotate(0deg); }
+            100% { transform: translate(-50%, -100%) rotate(360deg); }
+        }
+        
+        /* 燃料表 */
+        .fuel-indicator {
+            position: absolute;
+            bottom: 120px;
+            right: 80px;
+            width: 200px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(0,255,0,0.1) 0%, rgba(0,255,0,0.3) 100%);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 0 20px rgba(0,255,0,0.3);
+        }
+        
+        .fuel-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00ff00;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .fuel-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00aa00);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0,255,0,0.5);
+        }
+        
+        /* 控制面板 */
+        .control-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 2px solid #333;
+            pointer-events: auto;
+        }
+        
+        .cockpit-button {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+        
+        .cockpit-button:hover {
+            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        .cockpit-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        /* HUD显示 */
+        .hud-display {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .hud-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .hud-coordinates {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        /* 瞄准镜 */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            z-index: 200;
+            pointer-events: none;
+            box-shadow: 0 0 20px rgba(0,255,0,0.5);
+        }
+        
+        #crosshair::before,
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            background: #00ff00;
+            box-shadow: 0 0 10px rgba(0,255,0,0.8);
+        }
+        
+        #crosshair::before {
+            top: 50%;
+            left: -10px;
+            right: -10px;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+        
+        #crosshair::after {
+            left: 50%;
+            top: -10px;
+            bottom: -10px;
+            width: 2px;
+            transform: translateX(-50%);
+        }
+        
+        /* 瞄准圈 */
+        .aiming-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border: 1px solid rgba(0,255,0,0.3);
+            border-radius: 50%;
+            z-index: 199;
+            pointer-events: none;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        /* 加载界面 */
         #loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 200;
+            z-index: 300;
             text-align: center;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
         }
         
         .loading-spinner {
             border: 4px solid #333;
-            border-top: 4px solid #fff;
+            border-top: 4px solid #00ff00;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -88,92 +313,187 @@
             100% { transform: rotate(360deg); }
         }
         
-        button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-            font-size: 14px;
-        }
-        
-        button:hover {
-            background: #45a049;
-        }
-        
-        #crosshair {
+        /* 警告信息 */
+        .warning-message {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
+            background: rgba(255,0,0,0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            z-index: 250;
+            display: none;
+            box-shadow: 0 0 30px rgba(255,0,0,0.5);
+        }
+        
+        /* 传感器信息 */
+        .sensor-info {
+            position: absolute;
+            top: 200px;
+            right: 80px;
+            width: 180px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .sensor-item {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .sensor-label {
+            color: #00ff00;
+            opacity: 0.8;
+        }
+        
+        .sensor-value {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        /* 鼠标锁定提示 */
+        .mouse-lock-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: #00ff00;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 400;
             border: 2px solid #00ff00;
-            border-radius: 50%;
-            z-index: 150;
+            box-shadow: 0 0 20px rgba(0,255,0,0.5);
+            transition: opacity 0.3s ease;
+        }
+        
+        .mouse-lock-hint.hidden {
+            opacity: 0;
             pointer-events: none;
         }
         
-        #crosshair::before,
-        #crosshair::after {
-            content: '';
+        /* 鼠标锁定状态指示器 */
+        .lock-indicator {
             position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff0000;
+            border: 2px solid #666;
+            transition: all 0.3s ease;
+        }
+        
+        .lock-indicator.locked {
             background: #00ff00;
-        }
-        
-        #crosshair::before {
-            top: 50%;
-            left: -5px;
-            right: -5px;
-            height: 2px;
-            transform: translateY(-50%);
-        }
-        
-        #crosshair::after {
-            left: 50%;
-            top: -5px;
-            bottom: -5px;
-            width: 2px;
-            transform: translateX(-50%);
+            border-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
         }
     </style>
 </head>
 <body>
     <div id="loading">
         <div class="loading-spinner"></div>
-        <p>正在加载星际探索游戏...</p>
+        <p>正在加载驾驶舱系统...</p>
     </div>
     
     <canvas id="gameCanvas"></canvas>
     
-    <div id="ui">
-        <h3>🚀 星际探索</h3>
-        <div class="status-item">位置: <span id="position">0, 0, 0</span></div>
-        <div class="status-item">速度: <span id="speed">0</span> km/s</div>
-        <div class="status-item">燃料: <span id="fuel">100</span>%</div>
-        <div class="status-item">已探索: <span id="explored">0</span> 个星系</div>
-        <div class="status-item">目标距离: <span id="distance">--</span> AU</div>
+    <!-- 驾驶舱UI界面 -->
+    <div class="cockpit-ui">
+        <!-- HUD显示 -->
+        <div class="hud-display">
+            <div class="hud-title">STARSHIP COCKPIT</div>
+            <div class="hud-coordinates" id="coordinates">X: 0.0 Y: 0.0 Z: 0.0</div>
+        </div>
+        
+        <!-- 状态指示器 -->
+        <div class="status-lights">
+            <div class="status-light active" id="system-light" title="系统状态"></div>
+            <div class="status-light active" id="engine-light" title="引擎状态"></div>
+            <div class="status-light active" id="shield-light" title="护盾状态"></div>
+            <div class="status-light" id="weapon-light" title="武器状态"></div>
+        </div>
+        
+        <!-- 速度表 -->
+        <div class="speed-indicator">
+            <div class="speed-label">速度</div>
+            <div>
+                <span class="speed-value" id="speed-value">0.0</span>
+                <span class="speed-unit">KM/S</span>
+            </div>
+        </div>
+        
+        <!-- 雷达 -->
+        <div class="radar-screen">
+            <div class="radar-sweep"></div>
+        </div>
+        
+        <!-- 燃料表 -->
+        <div class="fuel-indicator">
+            <div class="speed-label">燃料</div>
+            <div class="fuel-bar">
+                <div class="fuel-fill" id="fuel-fill"></div>
+            </div>
+            <div style="text-align: center; margin-top: 5px;">
+                <span id="fuel-percent">100</span>%
+            </div>
+        </div>
+        
+        <!-- 传感器信息 -->
+        <div class="sensor-info">
+            <div class="sensor-item">
+                <span class="sensor-label">已探索:</span>
+                <span class="sensor-value" id="explored-count">0</span>
+            </div>
+            <div class="sensor-item">
+                <span class="sensor-label">目标距离:</span>
+                <span class="sensor-value" id="target-distance">--</span>
+            </div>
+            <div class="sensor-item">
+                <span class="sensor-label">曲速状态:</span>
+                <span class="sensor-value" id="warp-status">OFF</span>
+            </div>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <button class="cockpit-button" onclick="toggleWarp()">曲速引擎</button>
+            <button class="cockpit-button" onclick="findNearestPlanet()">导航</button>
+            <button class="cockpit-button" onclick="toggleShield()">护盾</button>
+        </div>
+        
+        <!-- 瞄准系统 -->
+        <div class="aiming-circle"></div>
+        <div id="crosshair"></div>
+        
+        <!-- 警告信息 -->
+        <div class="warning-message" id="warning-message"></div>
+        
+        <!-- 鼠标锁定提示 -->
+        <div class="mouse-lock-hint" id="mouse-lock-hint">
+            点击屏幕锁定鼠标以控制视角<br>
+            <small>按 ESC 键退出锁定</small>
+        </div>
+        
+        <!-- 鼠标锁定状态指示器 -->
+        <div class="lock-indicator" id="lock-indicator" title="鼠标锁定状态"></div>
     </div>
-    
-    <div id="controls">
-        <div class="control-item"><strong>🎮 控制说明:</strong></div>
-        <div class="control-item">W/S - 前进/后退</div>
-        <div class="control-item">A/D - 左右移动</div>
-        <div class="control-item">Q/E - 上升/下降</div>
-        <div class="control-item">鼠标 - 视角控制</div>
-        <div class="control-item">空格 - 加速</div>
-        <div class="control-item">Shift - 减速</div>
-        <button onclick="toggleWarp()">曲速引擎</button>
-        <button onclick="findNearestPlanet()">寻找最近行星</button>
-    </div>
-    
-    <div id="minimap">
-        <canvas id="minimapCanvas" width="200" height="200"></canvas>
-    </div>
-    
-    <div id="crosshair"></div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -183,6 +503,7 @@
             scene: null,
             renderer: null,
             spaceship: null,
+            cockpit: null,
             planets: [],
             stars: null,
             fuel: 100,
@@ -190,9 +511,12 @@
             maxSpeed: 10,
             exploredSystems: 0,
             isWarpActive: false,
+            shieldActive: false,
             targetPlanet: null,
             keys: {},
             mouse: { x: 0, y: 0 },
+            cameraRotation: { x: 0, y: 0 },
+            targetRotation: { x: 0, y: 0 },
             clock: new THREE.Clock()
         };
         
@@ -208,7 +532,7 @@
                 0.1,
                 10000
             );
-            gameState.camera.position.set(0, 10, 20);
+            gameState.camera.position.set(0, 2, 5);
             
             // 创建渲染器
             gameState.renderer = new THREE.WebGLRenderer({ 
@@ -226,6 +550,9 @@
             // 创建飞船
             createSpaceship();
             
+            // 创建驾驶舱
+            createCockpit();
+            
             // 创建行星系统
             createPlanetSystem();
             
@@ -240,6 +567,9 @@
             
             // 隐藏加载界面
             document.getElementById('loading').style.display = 'none';
+            
+            // 初始化鼠标锁定状态
+            updateMouseLockStatus();
         }
         
         // 创建星空背景
@@ -269,36 +599,125 @@
         function createSpaceship() {
             const shipGroup = new THREE.Group();
             
-            // 飞船主体
-            const bodyGeometry = new THREE.ConeGeometry(1, 4, 8);
+            // 飞船主体（外部）
+            const bodyGeometry = new THREE.ConeGeometry(2, 8, 8);
             const bodyMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0x4488FF,
-                shininess: 100 
+                shininess: 100,
+                transparent: true,
+                opacity: 0.3
             });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
             body.rotation.x = Math.PI / 2;
             shipGroup.add(body);
             
             // 飞船引擎
-            const engineGeometry = new THREE.CylinderGeometry(0.3, 0.5, 1, 8);
+            const engineGeometry = new THREE.CylinderGeometry(0.6, 1, 2, 8);
             const engineMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0xFF4444,
                 emissive: 0x440000 
             });
             const engine = new THREE.Mesh(engineGeometry, engineMaterial);
-            engine.position.z = -2;
+            engine.position.z = -4;
             engine.rotation.x = Math.PI / 2;
             shipGroup.add(engine);
             
             // 飞船翼
-            const wingGeometry = new THREE.BoxGeometry(3, 0.1, 1);
-            const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+            const wingGeometry = new THREE.BoxGeometry(6, 0.2, 2);
+            const wingMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x666666,
+                transparent: true,
+                opacity: 0.3
+            });
             const wing = new THREE.Mesh(wingGeometry, wingMaterial);
-            wing.position.z = -1;
+            wing.position.z = -2;
             shipGroup.add(wing);
             
             gameState.spaceship = shipGroup;
             gameState.scene.add(gameState.spaceship);
+        }
+        
+        // 创建驾驶舱
+        function createCockpit() {
+            const cockpitGroup = new THREE.Group();
+            
+            // 驾驶舱框架
+            const frameGeometry = new THREE.BoxGeometry(4, 3, 6);
+            const frameMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x333333,
+                transparent: true,
+                opacity: 0.6
+            });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            cockpitGroup.add(frame);
+            
+            // 前挡风玻璃
+            const glassGeometry = new THREE.PlaneGeometry(3.5, 2.5);
+            const glassMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x88CCFF,
+                transparent: true,
+                opacity: 0.1,
+                reflectivity: 0.9,
+                side: THREE.DoubleSide
+            });
+            const windshield = new THREE.Mesh(glassGeometry, glassMaterial);
+            windshield.position.z = -2.9;
+            cockpitGroup.add(windshield);
+            
+            // 侧边玻璃
+            const sideGlassGeometry = new THREE.PlaneGeometry(2.5, 2.5);
+            const leftGlass = new THREE.Mesh(sideGlassGeometry, glassMaterial);
+            leftGlass.position.set(-1.75, 0, -1);
+            leftGlass.rotation.y = Math.PI / 2;
+            cockpitGroup.add(leftGlass);
+            
+            const rightGlass = new THREE.Mesh(sideGlassGeometry, glassMaterial);
+            rightGlass.position.set(1.75, 0, -1);
+            rightGlass.rotation.y = -Math.PI / 2;
+            cockpitGroup.add(rightGlass);
+            
+            // 控制面板
+            const panelGeometry = new THREE.BoxGeometry(3, 0.3, 1);
+            const panelMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+            const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+            panel.position.set(0, -1, -1);
+            cockpitGroup.add(panel);
+            
+            // 仪表盘
+            const dashboardGeometry = new THREE.BoxGeometry(3.2, 0.1, 0.5);
+            const dashboardMaterial = new THREE.MeshPhongMaterial({ color: 0x111111 });
+            const dashboard = new THREE.Mesh(dashboardGeometry, dashboardMaterial);
+            dashboard.position.set(0, 0.5, -2.8);
+            cockpitGroup.add(dashboard);
+            
+            // 座椅
+            const seatGeometry = new THREE.BoxGeometry(1.5, 0.5, 1.5);
+            const seatMaterial = new THREE.MeshPhongMaterial({ color: 0x444444 });
+            const seat = new THREE.Mesh(seatGeometry, seatMaterial);
+            seat.position.set(0, -0.75, 0.5);
+            cockpitGroup.add(seat);
+            
+            // 座椅靠背
+            const backrestGeometry = new THREE.BoxGeometry(1.5, 1.5, 0.3);
+            const backrest = new THREE.Mesh(backrestGeometry, seatMaterial);
+            backrest.position.set(0, 0, 1.2);
+            cockpitGroup.add(backrest);
+            
+            // 控制杆
+            const stickGeometry = new THREE.CylinderGeometry(0.1, 0.15, 0.8);
+            const stickMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+            const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+            stick.position.set(0, -0.4, 0.5);
+            cockpitGroup.add(stick);
+            
+            // 控制杆手柄
+            const handleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const handle = new THREE.Mesh(handleGeometry, stickMaterial);
+            handle.position.set(0, 0, 0.5);
+            cockpitGroup.add(handle);
+            
+            gameState.cockpit = cockpitGroup;
+            gameState.scene.add(gameState.cockpit);
         }
         
         // 创建行星系统
@@ -388,10 +807,31 @@
                 gameState.keys[e.key.toLowerCase()] = false;
             });
             
-            // 鼠标事件
+            // 鼠标事件 - 驾驶舱视角控制
             document.addEventListener('mousemove', (e) => {
-                gameState.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                gameState.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                if (document.pointerLockElement === document.body) {
+                    const deltaX = e.movementX || 0;
+                    const deltaY = e.movementY || 0;
+                    
+                    // 更新目标旋转角度
+                    gameState.targetRotation.y -= deltaX * 0.002;
+                    gameState.targetRotation.x -= deltaY * 0.002;
+                    
+                    // 限制垂直旋转角度
+                    gameState.targetRotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, gameState.targetRotation.x));
+                }
+            });
+            
+            // 锁定鼠标指针到屏幕中心
+            document.addEventListener('click', () => {
+                if (document.pointerLockElement !== document.body) {
+                    document.body.requestPointerLock();
+                }
+            });
+            
+            // 鼠标锁定状态变化
+            document.addEventListener('pointerlockchange', () => {
+                updateMouseLockStatus();
             });
             
             // 窗口大小改变
@@ -402,30 +842,66 @@
             });
         }
         
+        // 更新鼠标锁定状态
+        function updateMouseLockStatus() {
+            const isLocked = document.pointerLockElement === document.body;
+            const hint = document.getElementById('mouse-lock-hint');
+            const indicator = document.getElementById('lock-indicator');
+            
+            if (isLocked) {
+                hint.classList.add('hidden');
+                indicator.classList.add('locked');
+            } else {
+                hint.classList.remove('hidden');
+                indicator.classList.remove('locked');
+            }
+        }
+        
         // 更新飞船控制
         function updateSpaceship() {
             const deltaTime = gameState.clock.getDelta();
             
-            // 键盘控制
+            // 平滑过渡相机旋转
+            gameState.cameraRotation.x += (gameState.targetRotation.x - gameState.cameraRotation.x) * 0.1;
+            gameState.cameraRotation.y += (gameState.targetRotation.y - gameState.cameraRotation.y) * 0.1;
+            
+            // 计算飞行方向（基于相机朝向）
+            const forward = new THREE.Vector3(0, 0, -1);
+            const right = new THREE.Vector3(1, 0, 0);
+            const up = new THREE.Vector3(0, 1, 0);
+            
+            // 应用相机旋转到方向向量
+            forward.applyQuaternion(
+                new THREE.Quaternion().setFromEuler(
+                    new THREE.Euler(gameState.cameraRotation.x, gameState.cameraRotation.y, 0)
+                )
+            );
+            right.applyQuaternion(
+                new THREE.Quaternion().setFromEuler(
+                    new THREE.Euler(0, gameState.cameraRotation.y, 0)
+                )
+            );
+            
+            // 键盘控制（相对于相机朝向）
             if (gameState.keys['w']) {
-                gameState.spaceship.position.z -= 0.5;
+                gameState.spaceship.position.add(forward.clone().multiplyScalar(0.5));
                 gameState.speed = Math.min(gameState.speed + 0.1, gameState.maxSpeed);
             }
             if (gameState.keys['s']) {
-                gameState.spaceship.position.z += 0.5;
+                gameState.spaceship.position.add(forward.clone().multiplyScalar(-0.5));
                 gameState.speed = Math.max(gameState.speed - 0.1, 0);
             }
             if (gameState.keys['a']) {
-                gameState.spaceship.position.x -= 0.5;
+                gameState.spaceship.position.add(right.clone().multiplyScalar(-0.5));
             }
             if (gameState.keys['d']) {
-                gameState.spaceship.position.x += 0.5;
+                gameState.spaceship.position.add(right.clone().multiplyScalar(0.5));
             }
             if (gameState.keys['q']) {
-                gameState.spaceship.position.y += 0.5;
+                gameState.spaceship.position.add(up.clone().multiplyScalar(0.5));
             }
             if (gameState.keys['e']) {
-                gameState.spaceship.position.y -= 0.5;
+                gameState.spaceship.position.add(up.clone().multiplyScalar(-0.5));
             }
             
             // 空格加速
@@ -439,11 +915,8 @@
                 gameState.speed = Math.max(gameState.speed - 0.2, 0);
             }
             
-            // 鼠标控制视角
-            gameState.camera.position.x = gameState.spaceship.position.x + gameState.mouse.x * 10;
-            gameState.camera.position.y = gameState.spaceship.position.y + gameState.mouse.y * 10;
-            gameState.camera.position.z = gameState.spaceship.position.z + 20;
-            gameState.camera.lookAt(gameState.spaceship.position);
+            // 更新相机位置和朝向
+            updateCamera();
             
             // 自动减速
             if (!gameState.keys['w'] && !gameState.keys['s'] && !gameState.keys[' ']) {
@@ -468,13 +941,58 @@
             updateUI();
         }
         
+        // 更新相机和驾驶舱
+        function updateCamera() {
+            // 计算相机偏移
+            const cameraOffset = new THREE.Vector3(0, 2, 0);
+            const lookOffset = new THREE.Vector3(0, 2, -10);
+            
+            // 应用旋转到偏移量
+            cameraOffset.applyQuaternion(
+                new THREE.Quaternion().setFromEuler(
+                    new THREE.Euler(gameState.cameraRotation.x, gameState.cameraRotation.y, 0)
+                )
+            );
+            lookOffset.applyQuaternion(
+                new THREE.Quaternion().setFromEuler(
+                    new THREE.Euler(gameState.cameraRotation.x, gameState.cameraRotation.y, 0)
+                )
+            );
+            
+            // 设置相机位置
+            gameState.camera.position.copy(gameState.spaceship.position).add(cameraOffset);
+            
+            // 设置相机朝向
+            const lookAtPoint = gameState.spaceship.position.clone().add(lookOffset);
+            gameState.camera.lookAt(lookAtPoint);
+            
+            // 更新驾驶舱旋转
+            if (gameState.cockpit) {
+                gameState.cockpit.position.copy(gameState.spaceship.position);
+                gameState.cockpit.rotation.x = gameState.cameraRotation.x;
+                gameState.cockpit.rotation.y = gameState.cameraRotation.y;
+            }
+        }
+        
         // 更新UI
         function updateUI() {
-            document.getElementById('position').textContent = 
-                `${gameState.spaceship.position.x.toFixed(1)}, ${gameState.spaceship.position.y.toFixed(1)}, ${gameState.spaceship.position.z.toFixed(1)}`;
-            document.getElementById('speed').textContent = gameState.speed.toFixed(1);
-            document.getElementById('fuel').textContent = gameState.fuel.toFixed(1);
-            document.getElementById('explored').textContent = gameState.exploredSystems;
+            // 更新坐标显示
+            document.getElementById('coordinates').textContent = 
+                `X: ${gameState.spaceship.position.x.toFixed(1)} Y: ${gameState.spaceship.position.y.toFixed(1)} Z: ${gameState.spaceship.position.z.toFixed(1)}`;
+            
+            // 更新速度显示
+            document.getElementById('speed-value').textContent = gameState.speed.toFixed(1);
+            
+            // 更新燃料显示
+            document.getElementById('fuel-percent').textContent = gameState.fuel.toFixed(0);
+            document.getElementById('fuel-fill').style.width = gameState.fuel + '%';
+            
+            // 更新探索数量
+            document.getElementById('explored-count').textContent = gameState.exploredSystems;
+            
+            // 更新曲速状态
+            document.getElementById('warp-status').textContent = gameState.isWarpActive ? 'ON' : 'OFF';
+            document.getElementById('warp-status').style.color = gameState.isWarpActive ? '#00ff00' : '#ff0000';
             
             // 计算到最近行星的距离
             let minDistance = Infinity;
@@ -484,8 +1002,54 @@
             });
             
             if (minDistance < Infinity) {
-                document.getElementById('distance').textContent = (minDistance / 10).toFixed(1);
+                document.getElementById('target-distance').textContent = (minDistance / 10).toFixed(1) + ' AU';
             }
+            
+            // 更新状态指示灯
+            updateStatusLights();
+            
+            // 更新燃料警告
+            if (gameState.fuel < 20) {
+                document.getElementById('fuel-fill').style.background = 'linear-gradient(90deg, #ff0000, #aa0000)';
+                showWarning('燃料不足！');
+            } else if (gameState.fuel < 50) {
+                document.getElementById('fuel-fill').style.background = 'linear-gradient(90deg, #ffff00, #aaaa00)';
+            } else {
+                document.getElementById('fuel-fill').style.background = 'linear-gradient(90deg, #00ff00, #00aa00)';
+            }
+        }
+        
+        // 更新状态指示灯
+        function updateStatusLights() {
+            // 系统状态
+            const systemLight = document.getElementById('system-light');
+            systemLight.className = 'status-light active';
+            
+            // 引擎状态
+            const engineLight = document.getElementById('engine-light');
+            if (gameState.speed > 0) {
+                engineLight.className = 'status-light active';
+            } else {
+                engineLight.className = 'status-light warning';
+            }
+            
+            // 护盾状态
+            const shieldLight = document.getElementById('shield-light');
+            if (gameState.shieldActive) {
+                shieldLight.className = 'status-light active';
+            } else {
+                shieldLight.className = 'status-light';
+            }
+        }
+        
+        // 显示警告信息
+        function showWarning(message) {
+            const warningEl = document.getElementById('warning-message');
+            warningEl.textContent = message;
+            warningEl.style.display = 'block';
+            setTimeout(() => {
+                warningEl.style.display = 'none';
+            }, 3000);
         }
         
         // 游戏循环
@@ -509,10 +1073,20 @@
             gameState.isWarpActive = !gameState.isWarpActive;
             if (gameState.isWarpActive) {
                 gameState.maxSpeed = 50;
-                alert('曲速引擎已激活！');
+                showWarning('曲速引擎已激活！');
             } else {
                 gameState.maxSpeed = 10;
-                alert('曲速引擎已关闭！');
+                showWarning('曲速引擎已关闭！');
+            }
+        }
+        
+        // 切换护盾
+        function toggleShield() {
+            gameState.shieldActive = !gameState.shieldActive;
+            if (gameState.shieldActive) {
+                showWarning('护盾已激活！');
+            } else {
+                showWarning('护盾已关闭！');
             }
         }
         
@@ -531,7 +1105,7 @@
             
             if (nearestPlanet) {
                 gameState.targetPlanet = nearestPlanet;
-                alert(`最近行星: ${nearestPlanet.data.name}，距离: ${(minDistance / 10).toFixed(1)} AU`);
+                showWarning(`目标锁定: ${nearestPlanet.data.name}`);
             }
         }
         
